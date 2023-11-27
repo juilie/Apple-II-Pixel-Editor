@@ -1,0 +1,9 @@
+.pixel {
+    width: 7px;
+    margin: -2px 0px;
+    
+}
+
+#screen {
+    width: 200vw;
+}
