@@ -1,17 +1,17 @@
 const screen = document.getElementById('screen');
 
-for (let row = 0; row < 192; row++) {
-    for (let col = 0; col < 280; col++) {
-        let x = document.createElement("INPUT");
-        x.setAttribute("type", "checkbox");
-        x.classList.add("pixel");
-        x.id = `${row},${col}`;
-        screen.appendChild(x);
-    }
+// for (let row = 0; row < 192; row++) {
+//     for (let col = 0; col < 280; col++) {
+//         let x = document.createElement("INPUT");
+//         x.setAttribute("type", "checkbox");
+//         x.classList.add("pixel");
+//         x.id = `${row},${col}`;
+//         screen.appendChild(x);
+//     }
 
-    let lineBreak = document.createElement("br");
-    screen.appendChild(lineBreak);
-}
+//     let lineBreak = document.createElement("br");
+//     screen.appendChild(lineBreak);
+// }
 
 function chunkRows(pixelByteArray) {
     let rows = [];

@@ -1,14 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="index.css">
     <title>Apple ][ Pixel Editor</title>
 </head>
+
 <body>
-    <div id="screen"></div>
-    <script src="index.js"></script>
+    <!-- <div id="screen"></div> -->
+    <!-- <script src="index.js"></script> -->
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pixel Editor</title>
+        <style>
+            canvas {
+                border: 1px solid #000;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="pixelCanvas" width="1120" height="768"></canvas>
+        <button id="saveButton">Save</button>
+        <script>
+            let mouseDown = false;
+            document.addEventListener("DOMContentLoaded", function () {
+                const canvas = document.getElementById("pixelCanvas");
+                const ctx = canvas.getContext("2d");
+
+                // Set initial pixel size and color
+                const pixelSize = 4;
+                let currentColor = "#000";
+
+                // Initialize the grid
+                function initGrid() {
+                    for (let x = 0; x < canvas.width; x += pixelSize) {
+                        for (let y = 0; y < canvas.height; y += pixelSize) {
+                            // ctx.strokeRect(x, y, pixelSize, pixelSize);
+                        }
+                    }
+                }
+
+                // Handle mouse click events
+                canvas.addEventListener("mousedown", function (event) {
+                    const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
+                    const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
+
+                    // console.log(x / pixelSize, y / pixelSize);
+
+                    ctx.fillStyle = currentColor;
+                    ctx.fillRect(x, y, pixelSize, pixelSize);
+                    // ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
+                    // ctx.fillRect(x, y + pixelSize * 2, pixelSize, pixelSize);
+                });
+
+                document.body.addEventListener("mousedown", () => {
+                    mouseDown = true
+                })
+                document.body.addEventListener("mouseup", () => {
+                    mouseDown = false
+                })
+
+                canvas.addEventListener("mousemove", function (event) {
+                    if (mouseDown) {
+                        const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
+                        const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
+
+                        console.log(x / pixelSize, y / pixelSize);
+
+                        ctx.fillStyle = currentColor;
+                        ctx.fillRect(x, y, pixelSize, pixelSize);
+                        // ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
+                        // ctx.fillRect(x, y + pixelSize * 2, pixelSize, pixelSize);
+                    }
+                })
+
+                // Handle color selection
+                const colorPicker = document.createElement("input");
+                colorPicker.type = "color";
+                colorPicker.addEventListener("input", function () {
+                    currentColor = colorPicker.value;
+                });
+
+                document.body.appendChild(colorPicker);
+
+                // Initialize the grid
+                initGrid();
+
+                // Function to get pixel array
+                function getPixelArray() {
+                    // const canvas = document.getElementById("pixelCanvas");
+                    const pixelArray = [];
+                    for (let y = 0; y < canvas.width; y += pixelSize) {
+                        for (let x = 0; x < canvas.height; x += pixelSize) {
+                            const pixelData = ctx.getImageData(x, y, pixelSize, pixelSize).data;
+                            const isPixelDrawn = pixelData.some(value => value !== 0);
+                            // if (isPixelDrawn) {
+                            //     console.log(pixelData);
+                            // }
+                            pixelArray.push(isPixelDrawn ? 1 : 0);
+                        }
+                    }
+                    return pixelArray;
+                }
+
+                // Save button click event
+                const saveButton = document.getElementById("saveButton");
+                saveButton.addEventListener("click", function () {
+                    const pixelArray = getPixelArray();
+                    console.log(pixelArray);
+                });
+            });
+        </script>
+        <script src="index.js"></script>
+    </body>
+
+    </html>
+
 </body>
 
 </html>
