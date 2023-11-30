@@ -14,11 +14,40 @@ const SPEC: WavSpec = WavSpec {
 pub fn bytes_to_wav(bytes: &[u8]) -> Vec<u8> {
     let mut buf = Cursor::new(vec![]);
     let mut wav = WavWriter::new(&mut buf, SPEC).expect("failed to write .wav header");
+    segment_header(&mut wav).expect("failed to write header");
     for &b in bytes {
         byte(&mut wav, b).expect("failed to write byte");
     }
+    checksum(&mut wav, bytes).expect("failed to write checksum");
+    segment_footer(&mut wav).expect("failed to write footer");
     wav.finalize().expect("failed to finalize .wav file");
+    
     buf.into_inner()
+}
+
+fn checksum(wav: &mut Wav, bytes: &[u8]) -> Result<()> {
+    let mut checksum = 0xFF;
+    for &b in bytes {
+        checksum ^= b;
+    }
+    byte(wav, checksum)
+}
+
+fn sync_bit(wav: &mut Wav) -> Result<()> {
+    half_cycle(wav, 2500., HalfCycle::High)?;
+    half_cycle(wav, 2000., HalfCycle::Low)?;
+    Ok(())
+}
+
+fn segment_header(wav: &mut Wav) -> Result<()> {
+    tone(wav, 770., Duration::from_secs(4))?;
+    sync_bit(wav)?;
+    Ok(())
+}
+fn segment_footer(wav: &mut Wav) -> Result<()> {
+    bit(wav, true)?;
+    tone(wav, 770., Duration::from_secs_f64(0.1))?;
+    silence(wav, Duration::from_secs_f64(0.1))
 }
 
 type Wav<'a> = WavWriter<&'a mut Cursor<Vec<u8>>>;
@@ -41,9 +70,9 @@ fn bit(wav: &mut Wav, bit: bool) -> Result<()> {
     }
 }
 
-// pub fn tone(wav: &mut Wav, freq: f64, dur: Duration) -> Result<()> {
-//     sine_wave(wav, freq, dur, false)
-// }
+pub fn tone(wav: &mut Wav, freq: f64, dur: Duration) -> Result<()> {
+    sine_wave(wav, freq, dur, false)
+}
 
 /// A single cycle of a sine wave, of the given frequency.
 pub fn cycle(wav: &mut Wav, freq: f64) -> Result<()> {
@@ -51,27 +80,27 @@ pub fn cycle(wav: &mut Wav, freq: f64) -> Result<()> {
     sine_wave(wav, freq, dur, false)
 }
 
-// pub enum HalfCycle {
-//     High,
-//     Low,
-// }
+pub enum HalfCycle {
+    High,
+    Low,
+}
 
-// /// Half of one cycle of a sine wave of the given frequency.
-// ///
-// /// The sample values are either positive or negative, depending on `half`.
-// pub fn half_cycle(wav: &mut Wav, freq: f64, half: HalfCycle) -> Result<()> {
-//     let dur = Duration::from_secs_f64(1. / freq / 2.);
-//     let invert = matches!(half, HalfCycle::Low);
-//     sine_wave(wav, freq, dur, invert)
-// }
+/// Half of one cycle of a sine wave of the given frequency.
+///
+/// The sample values are either positive or negative, depending on `half`.
+pub fn half_cycle(wav: &mut Wav, freq: f64, half: HalfCycle) -> Result<()> {
+    let dur = Duration::from_secs_f64(1. / freq / 2.);
+    let invert = matches!(half, HalfCycle::Low);
+    sine_wave(wav, freq, dur, invert)
+}
 
-// pub fn silence(wav: &mut Wav, dur: Duration) -> Result<()> {
-//     let num_samples = dur.as_secs_f64() * wav.spec().sample_rate as f64;
-//     for _ in 0..num_samples as u32 {
-//         wav.write_sample(0)?;
-//     }
-//     Ok(())
-// }
+pub fn silence(wav: &mut Wav, dur: Duration) -> Result<()> {
+    let num_samples = dur.as_secs_f64() * wav.spec().sample_rate as f64;
+    for _ in 0..num_samples as u32 {
+        wav.write_sample(0)?;
+    }
+    Ok(())
+}
 
 /// Three-quarters of the maximum voltage value, assuming each sample is i8.
 const AMPLITUDE: f64 = i8::MAX as f64 * 3. / 4.;

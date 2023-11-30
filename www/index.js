@@ -2,21 +2,15 @@ import * as wasm from "a2-pix";
 
 const screen = document.getElementById('screen');
 
-// for (let row = 0; row < 192; row++) {
-//     for (let col = 0; col < 280; col++) {
-//         let x = document.createElement("INPUT");
-//         x.setAttribute("type", "checkbox");
-//         x.classList.add("pixel");
-//         x.id = `${row},${col}`;
-//         screen.appendChild(x);
-//     }
-
-//     let lineBreak = document.createElement("br");
-//     screen.appendChild(lineBreak);
-// }
-
 function pixelsToWav(pixelArray) {
-    return wasm.bytes_to_wav(pixelsToMemory(pixelArray));
+    const testArr = new Array(8192).fill(255)
+    const pixelBytes = pixelsToBytes(pixelArray);
+
+    const pixelLoad = pixelsToMemory(pixelBytes);
+
+    console.log({pixelBytes});
+    // const pixelBytes = pixelsToMemory(pixelArray);
+    return wasm.bytes_to_wav(pixelLoad);
 }
 
 function chunkRows(pixelByteArray) {
@@ -61,7 +55,7 @@ function readPixels() {
     const pixelArray = [];
     pixels.forEach((pixel, index) => {
         if (pixel.checked) {
-            console.log(pixel.id);
+            // console.log(pixel.id);
         }
         pixelArray.push(pixel.checked ? 1 : 0);
     })
@@ -78,7 +72,7 @@ const canvas = document.getElementById("pixelCanvas");
 const ctx = canvas.getContext("2d");
 
 // Set initial pixel size and color
-const pixelSize = 4;
+const pixelSize = 1;
 let currentColor = "#000";
 
 // Initialize the grid
@@ -95,12 +89,8 @@ canvas.addEventListener("mousedown", function (event) {
     const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
     const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
 
-    // console.log(x / pixelSize, y / pixelSize);
-
     ctx.fillStyle = currentColor;
     ctx.fillRect(x, y, pixelSize, pixelSize);
-    // ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
-    // ctx.fillRect(x, y + pixelSize * 2, pixelSize, pixelSize);
 });
 
 document.body.addEventListener("mousedown", () => {
@@ -115,12 +105,18 @@ canvas.addEventListener("mousemove", function (event) {
         const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
         const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
 
-        console.log(x / pixelSize, y / pixelSize);
+        // console.log(x / pixelSize, y / pixelSize);
 
         ctx.fillStyle = currentColor;
         ctx.fillRect(x, y, pixelSize, pixelSize);
-        // ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
-        // ctx.fillRect(x, y + pixelSize * 2, pixelSize, pixelSize);
+        ctx.fillRect(x+ pixelSize, y, pixelSize, pixelSize);
+        ctx.fillRect(x - pixelSize, y, pixelSize, pixelSize);
+        ctx.fillRect(x+ 2* pixelSize, y, pixelSize, pixelSize);
+        ctx.fillRect(x - 2* pixelSize, y, pixelSize, pixelSize);
+        ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
+        ctx.fillRect(x, y - pixelSize, pixelSize, pixelSize);
+        ctx.fillRect(x, y + 2*pixelSize, pixelSize, pixelSize);
+        ctx.fillRect(x, y - 2*pixelSize, pixelSize, pixelSize);
     }
 })
 
@@ -139,14 +135,12 @@ initGrid();
 // Function to get pixel array
 function getPixelArray() {
     // const canvas = document.getElementById("pixelCanvas");
+
     const pixelArray = [];
-    for (let y = 0; y < canvas.width; y += pixelSize) {
-        for (let x = 0; x < canvas.height; x += pixelSize) {
+    for (let y = 0; y < canvas.height; y += pixelSize) {
+        for (let x = 0; x < canvas.width; x += pixelSize) {
             const pixelData = ctx.getImageData(x, y, pixelSize, pixelSize).data;
             const isPixelDrawn = pixelData.some(value => value !== 0);
-            // if (isPixelDrawn) {
-            //     console.log(pixelData);
-            // }
             pixelArray.push(isPixelDrawn ? 1 : 0);
         }
     }
@@ -157,8 +151,14 @@ function getPixelArray() {
 const saveButton = document.getElementById("saveButton");
 saveButton.addEventListener("click", function () {
     const pixelArray = getPixelArray();
-    console.log(pixelArray);
-
+    console.log(`Pixel Array: ${pixelArray}`);
     let wav = pixelsToWav(pixelArray);
-    console.log(wav);
+    console.log({wav});
+
+    const wavBlob = new Blob([wav], {type: "audio/wav"} );
+    const wavBlobURL = URL.createObjectURL(wavBlob);
+    console.log(wavBlobURL);
+
+    const audio = new Audio(wavBlobURL);
+    audio.play();
 });
