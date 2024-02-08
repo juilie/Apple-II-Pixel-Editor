@@ -1,24 +1,25 @@
 import * as wasm from "a2-pix";
+let mouseDown = false;
+// Set initial pixel size and color
+const PIXEL_SIZE = 1;
+let currentColor = "#000";
 
-const screen = document.getElementById('screen');
+const thresholdSlider = document.getElementById("threshold");
+let L_THRESHOLD = thresholdSlider.value;
+
+thresholdSlider.addEventListener("change", e => {
+    L_THRESHOLD = e.target.value;
+    drawImage();
+})
+
+const canvas = document.getElementById("pixelCanvas");
+const ctx = canvas.getContext("2d");
 
 function pixelsToWav(pixelArray) {
-    const testArr = new Array(8192).fill(255)
     const pixelBytes = pixelsToBytes(pixelArray);
-
     const pixelLoad = pixelsToMemory(pixelBytes);
 
-    console.log({pixelBytes});
-    // const pixelBytes = pixelsToMemory(pixelArray);
     return wasm.bytes_to_wav(pixelLoad);
-}
-
-function chunkRows(pixelByteArray) {
-    let rows = [];
-    for (let i = 0; i < pixelByteArray.length; i += 40) {
-        rows.push(pixelByteArray.slice(i, i + 40));
-    }
-    return rows;
 }
 
 function pixelsToBytes(pixelArray) {
@@ -50,97 +51,80 @@ function pixelsToMemory(pixelBytes) {
     return mem;
 }
 
-function readPixels() {
-    const pixels = document.querySelectorAll('.pixel');
-    const pixelArray = [];
-    pixels.forEach((pixel, index) => {
-        if (pixel.checked) {
-            // console.log(pixel.id);
+
+function drawImage() {
+    const imgSrc = document.getElementById("imgFile").files[0]
+    const imageUrl = URL.createObjectURL(imgSrc);
+    const img = new Image();
+    img.src = imageUrl;
+
+    img.onload = () => {
+        if (img.width > img.height) {
+            ctx.drawImage(img, 0, 0, canvas.width, (canvas.width*img.height)/img.width)
+        } else {
+            const newWidth = (canvas.width*img.width)/img.height;
+            const center = (canvas.width/2) - (newWidth / 2);
+            ctx.drawImage(img, center,0, newWidth, canvas.width)
+            
         }
-        pixelArray.push(pixel.checked ? 1 : 0);
-    })
-    let bytes = pixelsToBytes(pixelArray);
-    let mem = pixelsToMemory(bytes);
-    console.log(mem);
+
+        imageToBlackAndWhite()
+    };
 }
 
-document.body.addEventListener('keypress', readPixels);
+function imageToBlackAndWhite() {
+    
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let data = imageData.data
 
-let mouseDown = false;
-
-const canvas = document.getElementById("pixelCanvas");
-const ctx = canvas.getContext("2d");
-
-// Set initial pixel size and color
-const pixelSize = 1;
-let currentColor = "#000";
-
-// Initialize the grid
-function initGrid() {
-    for (let x = 0; x < canvas.width; x += pixelSize) {
-        for (let y = 0; y < canvas.height; y += pixelSize) {
-            // ctx.strokeRect(x, y, pixelSize, pixelSize);
+    for (let pixel = 0; pixel < data.length; pixel+=4) {
+        const pixelData = data.slice(pixel, pixel+4);
+        const newPixel = RGBAToHSLA(...pixelData);
+        const L = newPixel[2];
+        console.log(L_THRESHOLD);
+        if (L > L_THRESHOLD) {
+            data[pixel] = 255
+            data[pixel+1] = 255
+            data[pixel+2] = 255
+            data[pixel+3] = 255
+        }
+        else {
+            data[pixel] = 0
+            data[pixel+1] = 0
+            data[pixel+2] = 0
+            data[pixel+3] = 255
         }
     }
+    ctx.putImageData(imageData, 0, 0)
 }
 
-// Handle mouse click events
-canvas.addEventListener("mousedown", function (event) {
-    const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
-    const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
-
-    ctx.fillStyle = currentColor;
-    ctx.fillRect(x, y, pixelSize, pixelSize);
-});
-
-document.body.addEventListener("mousedown", () => {
-    mouseDown = true
-})
-document.body.addEventListener("mouseup", () => {
-    mouseDown = false
-})
-
-canvas.addEventListener("mousemove", function (event) {
-    if (mouseDown) {
-        const x = Math.floor(event.offsetX / pixelSize) * pixelSize;
-        const y = Math.floor(event.offsetY / pixelSize) * pixelSize;
-
-        // console.log(x / pixelSize, y / pixelSize);
-
-        ctx.fillStyle = currentColor;
-        ctx.fillRect(x, y, pixelSize, pixelSize);
-        ctx.fillRect(x+ pixelSize, y, pixelSize, pixelSize);
-        ctx.fillRect(x - pixelSize, y, pixelSize, pixelSize);
-        ctx.fillRect(x+ 2* pixelSize, y, pixelSize, pixelSize);
-        ctx.fillRect(x - 2* pixelSize, y, pixelSize, pixelSize);
-        ctx.fillRect(x, y + pixelSize, pixelSize, pixelSize);
-        ctx.fillRect(x, y - pixelSize, pixelSize, pixelSize);
-        ctx.fillRect(x, y + 2*pixelSize, pixelSize, pixelSize);
-        ctx.fillRect(x, y - 2*pixelSize, pixelSize, pixelSize);
-    }
-})
-
-// Handle color selection
-const colorPicker = document.createElement("input");
-colorPicker.type = "color";
-colorPicker.addEventListener("input", function () {
-    currentColor = colorPicker.value;
-});
-
-document.body.appendChild(colorPicker);
-
-// Initialize the grid
-initGrid();
+const RGBAToHSLA = (r, g, b, a) => {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const l = Math.max(r, g, b);
+    const s = l - Math.min(r, g, b);
+    const h = s
+      ? l === r
+        ? (g - b) / s
+        : l === g
+        ? 2 + (b - r) / s
+        : 4 + (r - g) / s
+      : 0;
+    return [
+      60 * h < 0 ? 60 * h + 360 : 60 * h,
+      100 * (s ? (l <= 0.5 ? s / (2 * l - s) : s / (2 - (2 * l - s))) : 0),
+      (100 * (2 * l - s)) / 2, a
+    ];
+  };
 
 // Function to get pixel array
 function getPixelArray() {
-    // const canvas = document.getElementById("pixelCanvas");
-
     const pixelArray = [];
-    for (let y = 0; y < canvas.height; y += pixelSize) {
-        for (let x = 0; x < canvas.width; x += pixelSize) {
-            const pixelData = ctx.getImageData(x, y, pixelSize, pixelSize).data;
-            const isPixelDrawn = pixelData.some(value => value !== 0);
+    for (let y = 0; y < canvas.height; y += PIXEL_SIZE) {
+        for (let x = 0; x < canvas.width; x += PIXEL_SIZE) {
+            const pixelData = ctx.getImageData(x, y, PIXEL_SIZE, PIXEL_SIZE).data;
+            const isPixelDrawn = pixelData.slice(0,3).some(value => value !== 0);
             pixelArray.push(isPixelDrawn ? 1 : 0);
         }
     }
@@ -151,14 +135,52 @@ function getPixelArray() {
 const saveButton = document.getElementById("saveButton");
 saveButton.addEventListener("click", function () {
     const pixelArray = getPixelArray();
-    console.log(`Pixel Array: ${pixelArray}`);
-    let wav = pixelsToWav(pixelArray);
-    console.log({wav});
 
-    const wavBlob = new Blob([wav], {type: "audio/wav"} );
+    let wavData = pixelsToWav(pixelArray);
+
+    const wavBlob = new Blob([wavData], {type: "audio/wav"} );
     const wavBlobURL = URL.createObjectURL(wavBlob);
-    console.log(wavBlobURL);
 
     const audio = new Audio(wavBlobURL);
     audio.play();
 });
+
+
+const submitImage = document.getElementById("submitImage");
+submitImage.addEventListener("click", () => {
+    drawImage();
+})
+
+// Handle mouse click events
+canvas.addEventListener("mousedown", function (event) {
+    mouseDown = true
+    const x = Math.floor(event.offsetX / PIXEL_SIZE) * PIXEL_SIZE;
+    const y = Math.floor(event.offsetY / PIXEL_SIZE) * PIXEL_SIZE;
+
+    ctx.fillStyle = currentColor;
+    ctx.fillRect(x, y, PIXEL_SIZE, PIXEL_SIZE);
+});
+
+document.body.addEventListener("mouseup", () => {
+    mouseDown = false
+})
+
+canvas.addEventListener("mousemove", function (event) {
+    if (mouseDown) {
+        const x = Math.floor(event.offsetX / PIXEL_SIZE) * PIXEL_SIZE;
+        const y = Math.floor(event.offsetY / PIXEL_SIZE) * PIXEL_SIZE;
+
+        // console.log(x / pixelSize, y / pixelSize);
+
+        ctx.fillStyle = currentColor;
+        ctx.fillRect(x, y, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x+ PIXEL_SIZE, y, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x - PIXEL_SIZE, y, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x+ 2* PIXEL_SIZE, y, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x - 2* PIXEL_SIZE, y, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x, y + PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x, y - PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x, y + 2*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+        ctx.fillRect(x, y - 2*PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+    }
+})

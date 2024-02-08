@@ -1,0 +1,7 @@
+uploading/drawing the image on the canvas
+converting to black/white threshhold
+
+hardcoding an image that's lrea lqfwisbednlk
+
+reading the image data -> free :)
+
