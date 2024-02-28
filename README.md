@@ -2,7 +2,7 @@
 
   <h1>Apple ][ Pixel Editor</h1>
 
-  <strong>A tool for transferring drawings and pictures to the Apple ][ computer on HGR mode via audio</strong>
+  <strong>A tool for transferring drawings and pictures to the Apple ][ computer</strong>
 
   <sub>Built with <a href="https://github.com/khollbach">khollbach</a></sub>
 </div>
