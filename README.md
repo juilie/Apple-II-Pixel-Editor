@@ -7,6 +7,10 @@
   <sub>Built with <a href="https://github.com/khollbach">khollbach</a></sub>
 </div>
 
+<div align="center">
+  ![output-onlinegiftools](https://github.com/juilie/Apple-II-Pixel-Editor/assets/33275847/2bfabfc1-5529-4924-a1a0-1e607a060186)
+</div>
+
 ## About
 
 This project enables the rendering of graphics from a modern computer onto an Apple ]\[, using the Apple's ability to interpret audio input as data for direct memory writing. This project currently uses the Apple \]\[ High-Resolution graphics mode ([HGR](https://en.wikipedia.org/wiki/Apple_II_graphics#High-Resolution_(Hi-Res)_graphics).
