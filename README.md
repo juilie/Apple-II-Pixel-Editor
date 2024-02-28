@@ -9,28 +9,19 @@
 
 ## About
 
-[**📚 Read this template tutorial! 📚**][template-docs]
+This project enables the rendering of graphics from a modern computer onto an Apple ]\[, using the Apple's ability to interpret audio input as data for direct memory writing. This project currently uses the Apple \]\[ High-Resolution graphics mode ([HGR](https://en.wikipedia.org/wiki/Apple_II_graphics#High-Resolution_(Hi-Res)_graphics).
 
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting package to NPM.
+The code behind the data to audio conversion is an adaptation of the [bas2wav](https://github.com/khollbach/bas2wav) Rust crate, originally developed by [@khollbach](https://github.com/khollbach) for converting BASIC programs into WAV files executable on the Apple ][. This project extends the crate's functionality to include the translation of image data and other arbitrary data types into WAV files. We built the Rust code to a WebAssembly (wasm) module, so the conversion happens client-side.
 
-Be sure to check out [other `wasm-pack` tutorials online][tutorials] for other
-templates and usages of `wasm-pack`.
-
-[tutorials]: https://rustwasm.github.io/docs/wasm-pack/tutorials/index.html
-[template-docs]: https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html
+Uploaded images are transformed into HSL values and a user-defined lightness threshold converts the image to a binary black and white image. This binary data is then arranged according to the Apple ]\[ graphics memory layout. To comply with the system's memory constraints, the most significant bit of each byte is discarded, resulting in a 7-bit memory-mapped representation of the pixel data. The data is processed through the wasm code to generate an audio file. The resulting audio is played back as input into an Apple ][, which renders the original image in its Hi-Res graphics mode.
 
 ## 🚴 Usage
-
-### Acquire Apple ][
-
-[Learn more about `cargo generate` here.](https://github.com/ashleygwilliams/cargo-generate)
-
-```
-cargo generate --git https://github.com/rustwasm/wasm-pack-template.git --name my-project
-cd my-project
-```
-
-### Type the following commands
+- Connect laptop to Apple \]\[ audio input
+- Press Control + Reset on the Apple \]\[
+- Enter the following commands on the Apple \]\[ (hit enter after each one)
+  - <code>HGR</code>
+  - <code>CALL -151</code>
+  - <code>2000.3FFFR</code>
+- Now you can play the converted audio from your computer, and the pixels will be written to the Apple \]\[ 
 
 ## Issues
