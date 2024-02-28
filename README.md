@@ -4,11 +4,11 @@
 
   <strong>A tool for transferring drawings and pictures to the Apple ][ computer</strong>
 
-  <sub>Built with <a href="https://github.com/khollbach">khollbach</a></sub>
+  <sub>In collaboration with <a href="https://github.com/khollbach">khollbach</a></sub>
 </div>
 
 <div align="center">
-  ![output-onlinegiftools](https://github.com/juilie/Apple-II-Pixel-Editor/assets/33275847/2bfabfc1-5529-4924-a1a0-1e607a060186)
+  <img src="https://github.com/juilie/Apple-II-Pixel-Editor/assets/33275847/2bfabfc1-5529-4924-a1a0-1e607a060186" alt="Gif of Apple II drawing the People's Coalition of Tandy logo" />
 </div>
 
 ## About
